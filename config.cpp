@@ -37,6 +37,7 @@
 
 #include "terminal.h"
 #include "utils.h"
+#include "stdio.h"
 
 // public:
 Config::Config(QObject *parent)
@@ -58,7 +59,7 @@ void Config::processArgs(const QStringList &args)
     while (it.hasNext()) {
         const QString &arg = it.next();
 
-        if (arg == "--help" || arg == "-h") {
+        if (arg == "--help") {
             setHelpFlag(true);
             return;
         }

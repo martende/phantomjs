@@ -83,6 +83,12 @@ public:
     QString proxyType() const;
     void setProxyType(const QString value);
 
+    QString proxyUser() const;
+    void setProxyUser(const QString value);
+
+    QString proxyPass() const;
+    void setProxyPass(const QString value);
+
     QString proxy() const;
     void setProxy(const QString &value);
     QString proxyHost() const;
@@ -131,6 +137,8 @@ private:
     QString m_outputEncoding;
     bool m_pluginsEnabled;
     QString m_proxyType;
+    QString m_proxyUser;
+    QString m_proxyPass;
     QString m_proxyHost;
     int m_proxyPort;
     QStringList m_scriptArgs;

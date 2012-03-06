@@ -43,6 +43,8 @@
 #include "webserver.h"
 #include "repl.h"
 
+#include "networkproxyfactory.h"
+#include "stdio.h"
 
 // public:
 Phantom::Phantom(QObject *parent)
@@ -89,9 +91,21 @@ Phantom::Phantom(QObject *parent)
         if (proxyType == "socks5") {
             networkProxyType = QNetworkProxy::Socks5Proxy;
         }
-
+        
+        NPF *proxy2 = new NPF();
+        proxy2->gogogo();
+        proxy2->loadSettings(networkProxyType, m_config.proxyHost(), m_config.proxyPort(),m_config.proxyUser(),m_config.proxyPass());
+        
         QNetworkProxy proxy(networkProxyType, m_config.proxyHost(), m_config.proxyPort());
+        
+        if (! m_config.proxyUser().isEmpty() && ! m_config.proxyPass().isEmpty() ) {
+        	proxy.setUser(m_config.proxyUser());
+        	proxy.setPassword(m_config.proxyPass());
+        }
         QNetworkProxy::setApplicationProxy(proxy);
+        
+        QNetworkProxyFactory::setApplicationProxyFactory(proxy2);
+        
     }
 
     // Set output encoding
