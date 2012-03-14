@@ -37,6 +37,7 @@
 #include <QDir>
 #include <QFileInfo>
 #include <QMouseEvent>
+#include <QKeyEvent>
 #include <QNetworkAccessManager>
 #include <QNetworkRequest>
 #include <QPainter>
@@ -616,6 +617,7 @@ void WebPage::sendEvent(const QString &type, const QVariant &arg1, const QVarian
             button = Qt::NoButton;
             buttons = Qt::NoButton;
         }
+        
         Q_ASSERT(eventType != QEvent::None);
 
         int x = arg1.toInt();
@@ -624,6 +626,23 @@ void WebPage::sendEvent(const QString &type, const QVariant &arg1, const QVarian
         QApplication::postEvent(m_webPage, event);
         QApplication::processEvents();
         return;
+    }
+    if ( type == "keypress" || type == "keyrelease") {
+    	
+    	QEvent::Type eventType = QEvent::None;
+    	if (type == "keypress" ) {
+        	eventType = QEvent::KeyPress;
+        }
+        if (type == "keyrelease" ) {
+        	eventType = QEvent::KeyPress;
+        }
+        Q_ASSERT(eventType != QEvent::None);
+        
+        int key = arg1.toInt();
+        QString text =  arg2.toString();
+        QKeyEvent *event = new QKeyEvent(eventType, key, Qt::NoModifier,text);
+        QApplication::postEvent(m_webPage, event);
+        QApplication::processEvents();
     }
 
     if (type == "click") {
