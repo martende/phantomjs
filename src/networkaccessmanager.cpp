@@ -193,7 +193,7 @@ void NetworkAccessManager::handleStarted()
     //printf("ASDSASDSDA %i\n",reply->pos());
     
     QByteArray ws = reply->peek(reply->size());
-    data["bodyContent"] = QString(ws);
+    data["bodyContent"] = QString(ws.toBase64());
     //reply->seek(0);
     //printf("SSS %i\n",reply->write(ws));
     //printf("ASDSASDSDA %i\n",reply->pos());
