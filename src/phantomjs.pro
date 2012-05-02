@@ -4,7 +4,7 @@ QT += network webkit
 CONFIG += console
 
 # Comment to enable Debug Messages
-DEFINES += QT_NO_DEBUG_OUTPUT
+DEFINES += QT_NO_DEBUG_OUTPUT QT_NO_WARNING_OUTPUT
 
 DESTDIR = ../bin
 
@@ -12,6 +12,7 @@ RESOURCES = phantomjs.qrc
 
 HEADERS += csconverter.h \
     phantom.h \
+    callback.h \
     webpage.h \
     webserver.h \
     consts.h \
@@ -20,6 +21,8 @@ HEADERS += csconverter.h \
     networkproxyfactory.h \
     cookiejar.h \
     filesystem.h \
+    system.h \
+    env.h \
     terminal.h \
     encoding.h \
     config.h \
@@ -27,6 +30,7 @@ HEADERS += csconverter.h \
     replcompletable.h
 
 SOURCES += phantom.cpp \
+    callback.cpp \
     webpage.cpp \
     webserver.cpp \
     main.cpp \
@@ -36,6 +40,8 @@ SOURCES += phantom.cpp \
     networkproxyfactory.cpp \
     cookiejar.cpp \
     filesystem.cpp \
+    system.cpp \
+    env.cpp \
     terminal.cpp \
     encoding.cpp \
     config.cpp \
@@ -58,6 +64,7 @@ win32: RC_FILE = phantomjs_win.rc
 os2:   RC_FILE = phantomjs_os2.rc
 
 mac {
+    QMAKE_CXXFLAGS += -fvisibility=hidden
     CONFIG -= app_bundle
 # Uncomment to build a Mac OS X Universal Binary (i.e. x86 + ppc)
 #    CONFIG += x86 ppc

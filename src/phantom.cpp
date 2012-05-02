@@ -30,11 +30,11 @@
 
 #include "phantom.h"
 
-#include <QtGui>
-#include <QtWebKit>
+#include <QApplication>
 #include <QDir>
 #include <QFileInfo>
 #include <QFile>
+#include <QWebPage>
 
 #include "consts.h"
 #include "terminal.h"
@@ -42,6 +42,8 @@
 #include "webpage.h"
 #include "webserver.h"
 #include "repl.h"
+#include "system.h"
+#include "callback.h"
 
 #include "networkproxyfactory.h"
 #include "stdio.h"
@@ -52,6 +54,7 @@ Phantom::Phantom(QObject *parent)
     , m_terminated(false)
     , m_returnValue(0)
     , m_filesystem(0)
+    , m_system(0)
 {
     // second argument: script name
     QStringList args = QApplication::arguments();
@@ -106,6 +109,16 @@ Phantom::Phantom(QObject *parent)
         
         QNetworkProxyFactory::setApplicationProxyFactory(proxy2);
         
+	/*
+	New proxy Auth
+        if(!m_config.proxyAuthUser().isEmpty() && !m_config.proxyAuthPass().isEmpty()) {
+            QNetworkProxy proxy(networkProxyType, m_config.proxyHost(), m_config.proxyPort(), m_config.proxyAuthUser(), m_config.proxyAuthPass());
+            QNetworkProxy::setApplicationProxy(proxy);
+        } else {
+            QNetworkProxy proxy(networkProxyType, m_config.proxyHost(), m_config.proxyPort());
+            QNetworkProxy::setApplicationProxy(proxy);
+        }
+	*/
     }
 
     // Set output encoding
@@ -114,22 +127,20 @@ Phantom::Phantom(QObject *parent)
     // Set script file encoding
     m_scriptFileEnc.setEncoding(m_config.scriptEncoding());
 
-    connect(m_page, SIGNAL(javaScriptConsoleMessageSent(QString, int, QString)),
-            SLOT(printConsoleMessage(QString, int, QString)));
+    connect(m_page, SIGNAL(javaScriptConsoleMessageSent(QString)),
+            SLOT(printConsoleMessage(QString)));
     connect(m_page, SIGNAL(initialized()),
             SLOT(onInitialized()));
 
     m_defaultPageSettings[PAGE_SETTINGS_LOAD_IMAGES] = QVariant::fromValue(m_config.autoLoadImages());
-    m_defaultPageSettings[PAGE_SETTINGS_LOAD_PLUGINS] = QVariant::fromValue(m_config.pluginsEnabled());
     m_defaultPageSettings[PAGE_SETTINGS_JS_ENABLED] = QVariant::fromValue(true);
     m_defaultPageSettings[PAGE_SETTINGS_XSS_AUDITING] = QVariant::fromValue(false);
     m_defaultPageSettings[PAGE_SETTINGS_USER_AGENT] = QVariant::fromValue(m_page->userAgent());
     m_defaultPageSettings[PAGE_SETTINGS_LOCAL_ACCESS_REMOTE] = QVariant::fromValue(m_config.localToRemoteUrlAccessEnabled());
+    m_defaultPageSettings[PAGE_SETTINGS_WEB_SECURITY_ENABLED] = QVariant::fromValue(m_config.webSecurityEnabled());
     m_page->applySettings(m_defaultPageSettings);
 
     setLibraryPath(QFileInfo(m_config.scriptFile()).dir().absolutePath());
-
-    onInitialized();
 }
 
 Phantom::~Phantom()
@@ -214,6 +225,11 @@ QVariantMap Phantom::version() const
     return result;
 }
 
+QObject *Phantom::page() const
+{
+    return m_page;
+}
+
 // public slots:
 QObject *Phantom::createWebPage()
 {
@@ -247,6 +263,25 @@ QObject *Phantom::createFilesystem()
     return m_filesystem;
 }
 
+QObject *Phantom::createSystem()
+{
+    if (!m_system) {
+        m_system = new System(this);
+
+        QStringList systemArgs;
+        systemArgs += m_config.scriptFile();
+        systemArgs += m_config.scriptArgs();
+        m_system->setArgs(systemArgs);
+    }
+
+    return m_system;
+}
+
+QObject* Phantom::createCallback()
+{
+    return new Callback(this);
+}
+
 QString Phantom::loadModuleSource(const QString &name)
 {
     QString moduleSource;
@@ -277,12 +312,9 @@ void Phantom::debugExit(int code)
 }
 
 // private slots:
-void Phantom::printConsoleMessage(const QString &message, int lineNumber, const QString &source)
+void Phantom::printConsoleMessage(const QString &message)
 {
-    QString msg = message;
-    if (!source.isEmpty())
-        msg = source + ":" + QString::number(lineNumber) + " " + msg;
-    Terminal::instance()->cout(msg);
+    Terminal::instance()->cout(message);
 }
 
 void Phantom::onInitialized()
@@ -291,7 +323,10 @@ void Phantom::onInitialized()
     m_page->mainFrame()->addToJavaScriptWindowObject("phantom", this);
 
     // Bootstrap the PhantomJS scope
-    m_page->mainFrame()->evaluateJavaScript(Utils::readResourceFileUtf8(":/bootstrap.js"));
+    m_page->mainFrame()->evaluateJavaScript(
+        Utils::readResourceFileUtf8(":/bootstrap.js"),
+        QString("phantomjs://bootstrap.js")
+    );
 }
 
 // private:

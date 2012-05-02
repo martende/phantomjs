@@ -34,6 +34,7 @@
 #include <QMap>
 #include <QVariantMap>
 #include <QWebPage>
+#include <QWebFrame>
 
 #include "replcompletable.h"
 
@@ -43,7 +44,7 @@ class NetworkAccessManager;
 class QWebInspector;
 class Phantom;
 
-class WebPage: public REPLCompletable
+class WebPage: public REPLCompletable, public QWebFrame::PrintCallback
 {
     Q_OBJECT
     Q_PROPERTY(QString content READ content WRITE setContent)
@@ -85,11 +86,16 @@ public:
 
     void showInspector(const int remotePort = -1);
 
+    QString footer(int page, int numPages);
+    qreal footerHeight() const;
+    QString header(int page, int numPages);
+    qreal headerHeight() const;
+
 public slots:
     void openUrl(const QString &address, const QVariant &op, const QVariantMap &settings);
     void release();
 
-    QVariant evaluate(const QString &code);
+    QVariant evaluateJavaScript(const QString &code);
     bool render(const QString &fileName);
     bool injectJs(const QString &jsFilePath);
     void _appendScriptElement(const QString &scriptUrl);
@@ -101,7 +107,8 @@ signals:
     void loadStarted();
     void loadFinished(const QString &status);
     void javaScriptAlertSent(const QString &msg);
-    void javaScriptConsoleMessageSent(const QString &message, int lineNumber, const QString &source);
+    void javaScriptConsoleMessageSent(const QString &message);
+    void javaScriptErrorSent(const QString &message, const QVariantList &backtrace);
     void resourceRequested(const QVariant &req);
     void resourceReceived(const QVariant &resource);
 
@@ -115,7 +122,8 @@ private:
     QString userAgent() const;
 
     void emitAlert(const QString &msg);
-    void emitConsoleMessage(const QString &msg, int lineNumber, const QString &source);
+    void emitConsoleMessage(const QString &msg);
+    void emitError(const QWebPage::JavaScriptError& error);
 
     virtual void initCompletions();
 

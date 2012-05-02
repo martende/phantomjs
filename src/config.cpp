@@ -74,14 +74,6 @@ void Config::processArgs(const QStringList &args)
             setAutoLoadImages(false);
             continue;
         }
-        if (arg == "--load-plugins=yes") {
-            setPluginsEnabled(true);
-            continue;
-        }
-        if (arg == "--load-plugins=no") {
-            setPluginsEnabled(false);
-            continue;
-        }
         if (arg == "--disk-cache=yes") {
             setDiskCacheEnabled(true);
             continue;
@@ -114,15 +106,20 @@ void Config::processArgs(const QStringList &args)
             setProxyType(arg.mid(13).trimmed());
             continue;
         }
-		if (arg.startsWith("--proxy-user=")) {
-			setProxyUser(arg.mid(13).trimmed());
-			continue;
-		}
+	/* my old proxy auth */
+	if (arg.startsWith("--proxy-user=")) {
+	    setProxyUser(arg.mid(13).trimmed());
+	    continue;
+	}
         if (arg.startsWith("--proxy-pass=")) {
             setProxyPass(arg.mid(13).trimmed());
             continue;
         }
-
+	/* my old proxy auth */
+        if (arg.startsWith("--proxy-auth=")){
+            setProxyAuth(arg.mid(13).trimmed());
+            continue;
+        }
         if (arg.startsWith("--proxy=")) {
             setProxy(arg.mid(8).trimmed());
             continue;
@@ -155,6 +152,14 @@ void Config::processArgs(const QStringList &args)
         }
         if (arg == "--remote-debugger-autorun=no") {
             setRemoteDebugAutorun(false);
+            continue;
+        }
+        if (arg == "--web-security=yes") {
+            setWebSecurityEnabled(true);
+            continue;
+        }
+        if (arg == "--web-security=no") {
+            setWebSecurityEnabled(false);
             continue;
         }
         if (arg.startsWith("--")) {
@@ -202,7 +207,7 @@ void Config::loadJsonFile(const QString &filePath)
     // Add this object to the global scope
     webPage.mainFrame()->addToJavaScriptWindowObject("config", this);
     // Apply the JSON config settings to this very object
-    webPage.mainFrame()->evaluateJavaScript(configurator.arg(jsonConfig));
+    webPage.mainFrame()->evaluateJavaScript(configurator.arg(jsonConfig), QString());
 }
 
 bool Config::autoLoadImages() const
@@ -279,16 +284,6 @@ void Config::setOutputEncoding(const QString &value)
     m_outputEncoding = value;
 }
 
-bool Config::pluginsEnabled() const
-{
-    return m_pluginsEnabled;
-}
-
-void Config::setPluginsEnabled(const bool value)
-{
-    m_pluginsEnabled = value;
-}
-
 QString Config::proxyType() const
 {
     return m_proxyType;
@@ -338,6 +333,35 @@ void Config::setProxy(const QString &value)
 
     setProxyHost(proxyHost);
     setProxyPort(proxyPort);
+}
+
+void Config::setProxyAuth(const QString &value)
+{
+    QString proxyUser = value;
+    QString proxyPass = "";
+
+    if (proxyUser.lastIndexOf(':') > 0) {
+        proxyPass = proxyUser.mid(proxyUser.lastIndexOf(':') + 1).trimmed();
+        proxyUser = proxyUser.left(proxyUser.lastIndexOf(':')).trimmed();
+
+        setProxyAuthUser(proxyUser);
+        setProxyAuthPass(proxyPass);
+    }
+}
+
+QString Config::proxyAuth() const
+{
+    return proxyAuthUser() + ":" + proxyAuthPass();
+}
+
+QString Config::proxyAuthUser() const
+{
+    return m_proxyAuthUser;
+}
+
+QString Config::proxyAuthPass() const
+{
+    return m_proxyAuthPass;
 }
 
 QString Config::proxyHost() const
@@ -439,6 +463,16 @@ void Config::setRemoteDebugAutorun(const bool value)
     m_remoteDebugAutorun = value;
 }
 
+bool Config::webSecurityEnabled() const
+{
+    return m_webSecurityEnabled;
+}
+
+void Config::setWebSecurityEnabled(const bool value)
+{
+    m_webSecurityEnabled = value;
+}
+
 // private:
 void Config::resetToDefaults()
 {
@@ -449,10 +483,11 @@ void Config::resetToDefaults()
     m_ignoreSslErrors = false;
     m_localToRemoteUrlAccessEnabled = false;
     m_outputEncoding = "UTF-8";
-    m_pluginsEnabled = false;
     m_proxyType = "http";
     m_proxyHost.clear();
     m_proxyPort = 1080;
+    m_proxyAuthUser.clear();
+    m_proxyAuthPass.clear();
     m_scriptArgs.clear();
     m_scriptEncoding = "UTF-8";
     m_scriptFile.clear();
@@ -461,7 +496,18 @@ void Config::resetToDefaults()
     m_debug = false;
     m_remoteDebugPort = -1;
     m_remoteDebugAutorun = false;
+    m_webSecurityEnabled = true;
     m_helpFlag = false;
+}
+
+void Config::setProxyAuthPass(const QString &value)
+{
+    m_proxyAuthPass = value;
+}
+
+void Config::setProxyAuthUser(const QString &value)
+{
+    m_proxyAuthUser = value;
 }
 
 void Config::setProxyHost(const QString &value)
