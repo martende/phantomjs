@@ -39,6 +39,7 @@
 #include "cookiejar.h"
 #include "networkaccessmanager.h"
 
+
 static const char *toString(QNetworkAccessManager::Operation op)
 {
     const char *str = 0;
@@ -181,6 +182,7 @@ void NetworkAccessManager::handleStarted()
     }
 
     QVariantMap data;
+   
     data["stage"] = "start";
     data["id"] = m_ids.value(reply);
     data["url"] = reply->url().toEncoded().data();
@@ -188,6 +190,15 @@ void NetworkAccessManager::handleStarted()
     data["statusText"] = reply->attribute(QNetworkRequest::HttpReasonPhraseAttribute);
     data["contentType"] = reply->header(QNetworkRequest::ContentTypeHeader);
     data["bodySize"] = reply->size();
+    //printf("ASDSASDSDA %i\n",reply->pos());
+    
+    QByteArray ws = reply->peek(reply->size());
+    data["bodyContent"] = QString(ws);
+    //reply->seek(0);
+    //printf("SSS %i\n",reply->write(ws));
+    //printf("ASDSASDSDA %i\n",reply->pos());
+    //reply->seek(0);
+    
     data["redirectURL"] = reply->header(QNetworkRequest::LocationHeader);
     data["headers"] = headers;
     data["time"] = QDateTime::currentDateTime();
