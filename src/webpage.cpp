@@ -634,13 +634,31 @@ void WebPage::sendEvent(const QString &type, const QVariant &arg1, const QVarian
         	eventType = QEvent::KeyPress;
         }
         if (type == "keyrelease" ) {
-        	eventType = QEvent::KeyPress;
+        	eventType = QEvent::KeyRelease;
         }
         Q_ASSERT(eventType != QEvent::None);
         
         int key = arg1.toInt();
         QString text =  arg2.toString();
-        QKeyEvent *event = new QKeyEvent(eventType, key, Qt::NoModifier,text);
+        QString modifier = "";
+        Qt::KeyboardModifiers mod=Qt::NoModifier;
+        
+        if (text.length()==2) {
+        	modifier=text[0];
+        	text=text[1];
+        }
+        if (text.length()==3) {
+        	if ( text == "sss" ) {
+        		key = Qt::Key_Shift;
+        		modifier="";
+        	}
+        	text="";
+        }
+        if ( modifier == "s") {
+        	mod=Qt::ShiftModifier;
+        }
+        
+        QKeyEvent *event = new QKeyEvent(eventType, key, mod,text);
         QApplication::postEvent(m_webPage, event);
         QApplication::processEvents();
     }
