@@ -38,7 +38,9 @@
 #include "config.h"
 #include "cookiejar.h"
 #include "networkaccessmanager.h"
+#include "networkreplyproxy.h"
 
+#include "stdio.h"
 
 static const char *toString(QNetworkAccessManager::Operation op)
 {
@@ -135,10 +137,11 @@ QNetworkReply *NetworkAccessManager::createRequest(Operation op, const QNetworkR
 
     // Pass duty to the superclass - Nothing special to do here (yet?)
     QNetworkReply *reply = QNetworkAccessManager::createRequest(op, req, outgoingData);
+    
     if(m_ignoreSslErrors) {
         reply->ignoreSslErrors();
     }
-
+    reply->setReadBufferSize(100000);
     QVariantList headers;
     foreach (QByteArray headerName, req.rawHeaderList()) {
         QVariantMap header;
@@ -157,10 +160,13 @@ QNetworkReply *NetworkAccessManager::createRequest(Operation op, const QNetworkR
     data["headers"] = headers;
     data["time"] = QDateTime::currentDateTime();
 
+    
     connect(reply, SIGNAL(readyRead()), this, SLOT(handleStarted()));
 
     emit resourceRequested(data);
-    return reply;
+    
+    return new NetworkReplyProxy(this, reply);
+
 }
 
 void NetworkAccessManager::handleStarted()
@@ -190,20 +196,12 @@ void NetworkAccessManager::handleStarted()
     data["statusText"] = reply->attribute(QNetworkRequest::HttpReasonPhraseAttribute);
     data["contentType"] = reply->header(QNetworkRequest::ContentTypeHeader);
     data["bodySize"] = reply->size();
-    //printf("ASDSASDSDA %i\n",reply->pos());
-    
-    QByteArray ws = reply->peek(reply->size());
-    data["bodyContent"] = QString(ws.toBase64());
-    //reply->seek(0);
-    //printf("SSS %i\n",reply->write(ws));
-    //printf("ASDSASDSDA %i\n",reply->pos());
-    //reply->seek(0);
-    
     data["redirectURL"] = reply->header(QNetworkRequest::LocationHeader);
     data["headers"] = headers;
     data["time"] = QDateTime::currentDateTime();
 
-    emit resourceReceived(data);
+    
+   	emit resourceReceived(data);
 }
 
 void NetworkAccessManager::handleFinished(QNetworkReply *reply)
@@ -226,7 +224,9 @@ void NetworkAccessManager::handleFinished(QNetworkReply *reply)
     data["redirectURL"] = reply->header(QNetworkRequest::LocationHeader);
     data["headers"] = headers;
     data["time"] = QDateTime::currentDateTime();
-
+    
+    NetworkReplyProxy *nrp = qobject_cast<NetworkReplyProxy*>(reply);
+	data["text"] = nrp->body();
     m_ids.remove(reply);
     m_started.remove(reply);
 

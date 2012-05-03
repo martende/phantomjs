@@ -17,6 +17,7 @@ HEADERS += csconverter.h \
     webserver.h \
     consts.h \
     utils.h \
+    networkreplyproxy.h \
     networkaccessmanager.h \
     networkproxyfactory.h \
     cookiejar.h \
@@ -36,6 +37,7 @@ SOURCES += phantom.cpp \
     main.cpp \
     csconverter.cpp \
     utils.cpp \
+    networkreplyproxy.cpp \
     networkaccessmanager.cpp \
     networkproxyfactory.cpp \
     cookiejar.cpp \
