@@ -330,9 +330,12 @@ void HTMLCanvasElement::setSurfaceSize(const IntSize& size)
 
 String HTMLCanvasElement::toDataURL(const String& mimeType, const double* quality, ExceptionCode& ec)
 {
-    if (!m_originClean) {
-        ec = SECURITY_ERR;
-        return String();
+	if (!m_originClean) {
+    	Settings* settings = document()->settings();
+    	if (settings && settings->isWebSecurityEnabled()) {
+    		ec = SECURITY_ERR;
+    		return String();
+    	}
     }
 
     if (m_size.isEmpty() || !buffer())
