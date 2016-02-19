@@ -1,8 +1,7 @@
 /*
   This file is part of the PhantomJS project from Ofi Labs.
 
-  Copyright (C) 2012 execjosh, http://execjosh.blogspot.com
-  Copyright (C) 2012 James M. Greene <james.m.greene@gmail.com>
+  Copyright (C) 2013 execjosh, http://execjosh.blogspot.com
 
   Redistribution and use in source and binary forms, with or without
   modification, are permitted provided that the following conditions are met:
@@ -28,63 +27,53 @@
   THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef SYSTEM_H
-#define SYSTEM_H
+#ifndef ASYNCREADREQUEST_H
+#define ASYNCREADREQUEST_H
 
 #include <QObject>
-#include <QStringList>
-#include <QMap>
+#include <QString>
 #include <QVariant>
 
 #include "filesystem.h"
 
-// This class implements the CommonJS System/1.0 spec.
-// See: http://wiki.commonjs.org/wiki/System/1.0
-class System : public QObject
+class AsyncReadRequest : public QObject
 {
     Q_OBJECT
-    Q_PROPERTY(qint64 pid READ pid)
-    Q_PROPERTY(QStringList args READ args)
-    Q_PROPERTY(QVariant env READ env)
-    Q_PROPERTY(QVariant os READ os)
-    Q_PROPERTY(bool isSSLSupported READ isSSLSupported)
-    Q_PROPERTY(QObject *_stdout READ _stdout)
-    Q_PROPERTY(QObject *_stderr READ _stderr)
-    Q_PROPERTY(QObject *_stdin READ _stdin)
+    Q_PROPERTY(QString data READ data)
 
 public:
-    explicit System(QObject *parent = 0);
-    virtual ~System();
+    explicit AsyncReadRequest(File *file, const QVariant &n = 1, QObject *parent = 0);
 
-    qint64 pid() const;
+    QString data() const;
 
-    void setArgs(const QStringList& args);
-    QStringList args() const;
+signals:
+    void complete();
 
-    QVariant env() const;
+public slots:
+    /**
+     * Moves association to a new thread calling `_read`
+     */
+    void read();
+    /**
+     * Moves association to a new thread calling `_readLine`
+     */
+    void readLine();
+    void setFile(File &file);
 
-    QVariant os() const;
-
-    bool isSSLSupported() const;
-
-    // system.stdout
-    QObject *_stdout();
-
-    // system.stderr
-    QObject *_stderr();
-
-    // system.stdin
-    QObject *_stdin();
+private slots:
+    /**
+     * Does the actual read and emits `complete`
+     */
+    void _read();
+    /**
+     * Does the actual readLine and emits `complete`
+     */
+    void _readLine();
 
 private:
-    File *createFileInstance(QFile *f);
-
-    QStringList m_args;
-    QVariant m_env;
-    QMap<QString, QVariant> m_os;
-    File *m_stdout;
-    File *m_stderr;
-    File *m_stdin;
+    File *m_file;
+    QVariant m_param;
+    QString m_data;
 };
 
-#endif // SYSTEM_H
+#endif // ASYNCREADREQUEST_H

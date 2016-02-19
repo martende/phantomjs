@@ -26,6 +26,7 @@ HEADERS += csconverter.h \
     encoding.h \
     config.h \
     childprocess.h \
+    asyncreadrequest.h  \
     repl.h
 
 SOURCES += phantom.cpp \
@@ -44,6 +45,7 @@ SOURCES += phantom.cpp \
     encoding.cpp \
     config.cpp \
     childprocess.cpp \
+    asyncreadrequest.cpp \
     repl.cpp
 
 OTHER_FILES += \
@@ -53,6 +55,7 @@ OTHER_FILES += \
     modules/webpage.js \
     modules/webserver.js \
     modules/child_process.js \
+    modules/system.js \
     repl.js
 
 include(gif/gif.pri)

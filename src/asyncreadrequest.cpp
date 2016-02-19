@@ -1,8 +1,7 @@
 /*
   This file is part of the PhantomJS project from Ofi Labs.
 
-  Copyright (C) 2012 execjosh, http://execjosh.blogspot.com
-  Copyright (C) 2012 James M. Greene <james.m.greene@gmail.com>
+  Copyright (C) 2013 execjosh, http://execjosh.blogspot.com
 
   Redistribution and use in source and binary forms, with or without
   modification, are permitted provided that the following conditions are met:
@@ -28,63 +27,52 @@
   THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef SYSTEM_H
-#define SYSTEM_H
+#include "asyncreadrequest.h"
 
-#include <QObject>
-#include <QStringList>
-#include <QMap>
-#include <QVariant>
+#include <QtConcurrentRun>
 
-#include "filesystem.h"
-
-// This class implements the CommonJS System/1.0 spec.
-// See: http://wiki.commonjs.org/wiki/System/1.0
-class System : public QObject
+AsyncReadRequest::AsyncReadRequest(File *file, const QVariant &n, QObject *parent)
+    : QObject(parent)
+    , m_file(file)
+    , m_param(n)
+    , m_data()
 {
-    Q_OBJECT
-    Q_PROPERTY(qint64 pid READ pid)
-    Q_PROPERTY(QStringList args READ args)
-    Q_PROPERTY(QVariant env READ env)
-    Q_PROPERTY(QVariant os READ os)
-    Q_PROPERTY(bool isSSLSupported READ isSSLSupported)
-    Q_PROPERTY(QObject *_stdout READ _stdout)
-    Q_PROPERTY(QObject *_stderr READ _stderr)
-    Q_PROPERTY(QObject *_stdin READ _stdin)
+}
 
-public:
-    explicit System(QObject *parent = 0);
-    virtual ~System();
+// public:
 
-    qint64 pid() const;
+QString AsyncReadRequest::data() const
+{
+    return m_data;
+}
 
-    void setArgs(const QStringList& args);
-    QStringList args() const;
+void AsyncReadRequest::setFile(File &file)
+{
+    m_file = &file;
+}
 
-    QVariant env() const;
+// public slots:
 
-    QVariant os() const;
+void AsyncReadRequest::read()
+{
+    QtConcurrent::run(this, &AsyncReadRequest::_read);
+}
 
-    bool isSSLSupported() const;
+void AsyncReadRequest::readLine()
+{
+    QtConcurrent::run(this, &AsyncReadRequest::_readLine);
+}
 
-    // system.stdout
-    QObject *_stdout();
+// private slots:
 
-    // system.stderr
-    QObject *_stderr();
+void AsyncReadRequest::_read()
+{
+    m_data = m_file->read(m_param);
+    emit complete();
+}
 
-    // system.stdin
-    QObject *_stdin();
-
-private:
-    File *createFileInstance(QFile *f);
-
-    QStringList m_args;
-    QVariant m_env;
-    QMap<QString, QVariant> m_os;
-    File *m_stdout;
-    File *m_stderr;
-    File *m_stdin;
-};
-
-#endif // SYSTEM_H
+void AsyncReadRequest::_readLine()
+{
+    m_data = m_file->readLine();
+    emit complete();
+}

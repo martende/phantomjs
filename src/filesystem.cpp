@@ -35,6 +35,8 @@
 #include <QDebug>
 #include <QDateTime>
 
+#include "asyncreadrequest.h"
+
 // File
 // public:
 File::File(QFile *openfile, QTextCodec *codec, QObject *parent) :
@@ -221,6 +223,11 @@ void File::close()
 bool File::_isUnbuffered() const
 {
     return m_file->openMode() & QIODevice::Unbuffered;
+}
+
+QObject *File::_getAsyncReadRequest(const QVariant &n)
+{
+    return new AsyncReadRequest(this, n, this);
 }
 
 
@@ -485,3 +492,5 @@ bool FileSystem::_remove(const QString &path) const
 bool FileSystem::_copy(const QString &source, const QString &destination) const {
     return QFile(source).copy(destination);
 }
+
+

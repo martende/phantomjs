@@ -101,9 +101,21 @@ public:
 
     bool extension(Extension extension, const ExtensionOption* option, ExtensionReturn* output) {
         Q_UNUSED(option);
-
+        printf("EXTENSION!!!!\n");
         if (extension == ChooseMultipleFilesExtension) {
-            static_cast<ChooseMultipleFilesExtensionReturn*>(output)->fileNames = m_uploadFiles;
+            QString chosenFile = m_webPage->filePicker("");
+            if ( chosenFile == QString::null) 
+            printf("EXTENSION filePicker call ---!!!!\n"); 
+            else 
+                printf("EXTENSION filePicker call %s!!!!\n",chosenFile.toUtf8().constData()); 
+            if (chosenFile == QString::null && m_uploadFiles.count() > 0) {
+                // Check if instead User set a file via uploadFile API
+                chosenFile = m_uploadFiles.first();
+                static_cast<ChooseMultipleFilesExtensionReturn*>(output)->fileNames = m_uploadFiles;
+            } else {
+                static_cast<ChooseMultipleFilesExtensionReturn*>(output)->fileNames = QStringList(chosenFile);
+            }
+
             return true;
         } else {
             return false;
@@ -124,6 +136,7 @@ protected:
     QString chooseFile(QWebFrame *originatingFrame, const QString &oldFile) {
         Q_UNUSED(originatingFrame);
 
+        printf("BLIADDD\n");
         // Check if User set a file via File Picker
         QString chosenFile = m_webPage->filePicker(oldFile);
         if (chosenFile == QString::null && m_uploadFiles.count() > 0) {

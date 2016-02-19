@@ -54,6 +54,7 @@ public slots:
      */
     QString read(const QVariant &n = -1);
     bool write(const QString &data);
+    QObject *_getAsyncReadRequest(const QVariant &n = -1);
 
     bool seek(const qint64 pos);
 
